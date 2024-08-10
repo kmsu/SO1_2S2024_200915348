@@ -1,0 +1,1 @@
+savedcmd_/home/kevin/Documentos/2S2024/Sopes1/Lab/SO1_2S2024_200915348/Tarea1/ram.mod := printf '%s\n'   ram.o | awk '!x[$$0]++ { print("/home/kevin/Documentos/2S2024/Sopes1/Lab/SO1_2S2024_200915348/Tarea1/"$$0) }' > /home/kevin/Documentos/2S2024/Sopes1/Lab/SO1_2S2024_200915348/Tarea1/ram.mod
