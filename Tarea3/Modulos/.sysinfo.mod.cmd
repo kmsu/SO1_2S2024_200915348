@@ -1,0 +1,1 @@
+savedcmd_/home/kevin/Documentos/2S2024/Sopes1/Lab/SO1_2S2024_200915348/Tarea3/Modulos/sysinfo.mod := printf '%s\n'   sysinfo.o | awk '!x[$$0]++ { print("/home/kevin/Documentos/2S2024/Sopes1/Lab/SO1_2S2024_200915348/Tarea3/Modulos/"$$0) }' > /home/kevin/Documentos/2S2024/Sopes1/Lab/SO1_2S2024_200915348/Tarea3/Modulos/sysinfo.mod

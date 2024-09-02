@@ -1,0 +1,21 @@
+Abrir una terminal en la ruta donde estan los dockerfile
+
+docker build -t [NombreImagenContenedor] . 
+
+docker run [NombreImagenContenedor]
+
+---------------------------------------------------------------------
+Resumen de comandos docker
+docker build -t nombreContenedor . Para construir una imagen
+docker run nombreContenedor ejecutar el contenedor 
+docker run --name NombreImagne nombreContenedor
+docker stop nombre detener el contenedor
+docker stop id detener el contenedor por su id por si no funciona por nombre
+docker kill id forzar la detencion del contenedor
+docker rm nombre eliminar un contenedor
+docker rm id eliminar el contenedor por medio del id
+docker rmi nombre eliminar imagen docker 
+
+para ejecutar el script.sh en la carpeta contenedores
+chmod +x script.sh cambiar permisos
+./script.sh para ejecutar
