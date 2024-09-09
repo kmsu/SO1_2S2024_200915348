@@ -351,6 +351,7 @@ fn parse_proc_to_struct(json_str: &str) -> Result<SystemInfo, serde_json::Error>
     Ok(system_info)
 }
 
+//Para separar el json de los contenedores con el registro del sistema general
 fn extract_json(content: &str) -> Option<(&str,&str)> {
     // Busca el inicio del JSON, que es el primer carácter '{'
     if let Some(start) = content.find('{') {

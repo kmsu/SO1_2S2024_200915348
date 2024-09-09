@@ -1,0 +1,9 @@
+services:
+  log_registry:
+    build: ./
+    container_name: log_container
+    ports:
+      - "8000:8000"
+    volumes: 
+      - ./logs:/code/logs
+    command: [ "fastapi", "run", "main.py", "--port", "8000" ]
