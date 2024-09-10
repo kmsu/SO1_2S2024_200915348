@@ -2,6 +2,12 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::Path;
 use serde::{Deserialize, Serialize};
+use chrono::Local;
+use serde_json::json;
+//use reqwest::Client;
+use reqwest::blocking::Client;
+//use std::error::Error;
+//use tokio;
 
 // CREACIÓN DE STRUCT
 
@@ -55,10 +61,12 @@ struct LogProcess {
     pid: u32,
     container_id: String,
     name: String,
-    memory_usage: f64,
-    cpu_usage: f64,
     vsz: u64,
     rss: u64,
+    memory_usage: f64,
+    cpu_usage: f64,
+    action: String,
+    timestamp: String
 }
 
 // IMPLEMENTACIÓN DE MÉTODOS
@@ -171,6 +179,22 @@ fn kill_container(id: &str) -> std::process::Output {
     output
 }
 
+/* 
+    Funcion para obtener el nombre del contenedor y verificar que no sea el de logs
+*/
+fn get_container_name(container_id: &str) -> String {
+    let output = std::process::Command::new("sudo")
+        .arg("docker")
+        .arg("inspect")
+        .arg("--format={{.Name}}")
+        .arg(container_id)
+        .output()
+        .expect("failed to execute process");
+
+    let name = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    name
+}
+
 fn analyzer( system_info:  SystemInfo) {
 
 
@@ -185,6 +209,13 @@ fn analyzer( system_info:  SystemInfo) {
     */
     let mut processes_list: Vec<Process> = system_info.processes;
 
+    //Elimino el proceso del contenedor de logs antes de ordenar -> |process| es el nombre con el que itera la lista
+    if let Some(pos) = processes_list.iter().position(|process| {
+        let cont = get_container_name(&process.get_container_id());
+        cont == "/log_container"
+    }) {
+        processes_list.remove(pos);
+    }     
 
     /* 
         Cuando llamas a la función sort en un vector de Process, se ejecutarán los traits 
@@ -247,24 +278,33 @@ fn analyzer( system_info:  SystemInfo) {
         | 1 | 2 | 3 |
     */
 
+    
+
     if lowest_list.len() > 3 {
         // Iteramos sobre los procesos en la lista de bajo consumo.
         for process in lowest_list.iter().skip(3) {
+            let now = Local::now();
             let log_process = LogProcess {
                 pid: process.pid,
                 container_id: process.get_container_id().to_string(),
                 name: process.name.clone(),
-                memory_usage: process.memory_usage,
-                cpu_usage: process.cpu_usage,
                 vsz: process.vsz,
                 rss: process.rss,
+                memory_usage: process.memory_usage,
+                cpu_usage: process.cpu_usage,
+                action: "kill".to_string(),
+                timestamp: now.format("%Y-%m-%d %H:%M:%S").to_string(),
             };
-    
+
             log_proc_list.push(log_process.clone());
 
             // Matamos el contenedor.
             let _output = kill_container(&process.get_container_id());
 
+            // Enviar el JSON al servidor
+            if let Err(e) = send_log_to_server(&log_process) {
+                eprintln!("Error al enviar el log: {:?}", e);
+            }
         }
     } 
 
@@ -279,38 +319,76 @@ fn analyzer( system_info:  SystemInfo) {
     if highest_list.len() > 2 {
         // Iteramos sobre los procesos en la lista de alto consumo.
         for process in highest_list.iter().take(highest_list.len() - 2) {
+            let now = Local::now();
             let log_process = LogProcess {
                 pid: process.pid,
                 container_id: process.get_container_id().to_string(),
                 name: process.name.clone(),
+                vsz: process.vsz,
+                rss: process.rss,
                 memory_usage: process.memory_usage,
                 cpu_usage: process.cpu_usage,
-                vsz: process.vsz,
-                rss: process.rss
+                action: "kill".to_string(),
+                timestamp: now.format("%Y-%m-%d %H:%M:%S").to_string(),
             };
-    
+
             log_proc_list.push(log_process.clone());
 
             // Matamos el contenedor.
             let _output = kill_container(&process.get_container_id());
 
+            // Enviar el JSON al servidor
+            if let Err(e) = send_log_to_server(&log_process) {
+                eprintln!("Error al enviar el log: {:?}", e);
+            }
         }
     }
-
-    // TODO: ENVIAR LOGS AL CONTENEDOR REGISTRO
 
     // Hacemos un print de los contenedores que matamos.
     println!("Contenedores matados");
     for process in log_proc_list {
         //println!("PID: {}, Name: {}, Container ID: {}, Memory Usage: {}, CPU Usage: {} ", process.pid, process.name, process.container_id,  process.memory_usage, process.cpu_usage);
         println!("PID: {}, Name: {}, container ID: {}, Memory Usage: {}, CPU Usage: {}, vsz: {}, rss: {}", process.pid, process.name, process.container_id, process.memory_usage, process.cpu_usage, process.vsz, process.rss);
+        
     }
 
     println!("------------------------------");
-
-    
 }
 
+/* 
+    Funcion para enviar los datos del contenedor eliminado al log en formato json
+*/
+
+//async fn send_log_to_server(log_process: LogProcess) -> Result<(), Box<dyn std::error::Error>> {
+fn send_log_to_server(log_process: &LogProcess) -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let url = "http://127.0.0.1:8000/logs"; // Cambia esto a la URL de tu servidor
+
+    // Crear un vector que contenga el log_process
+    let log_list = vec![log_process.clone()];
+
+    // Convertir el vector a una cadena JSON
+    let json_body = serde_json::to_string(&log_list)?;
+
+    // Enviar la solicitud POST
+    let response = client.post(url)
+        .header("Content-Type", "application/json")
+        .body(json_body)
+        .send()?;
+
+    
+
+    if response.status().is_success() {
+        println!("Log enviado correctamente");
+    } else {
+        let error_body = response.text()?;
+        //println!("Error al enviar el log: {:?}", response.status());
+        println!("Cuerpo de error: {}", error_body);
+    }
+
+    Ok(())
+}
+        
 /*  
     Función para leer el archivo proc
     - file_name: El nombre del archivo que se quiere leer.
@@ -363,6 +441,8 @@ fn extract_json(content: &str) -> Option<(&str,&str)> {
     }
 }
 
+//#[tokio::main]
+//async fn main() {
 fn main() {
 
     // TODO: antes de iniciar el loop, ejecutar el docker-compose.yml y obtener el id del contenedor registro.

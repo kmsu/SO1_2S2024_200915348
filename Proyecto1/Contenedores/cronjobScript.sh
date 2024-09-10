@@ -11,5 +11,5 @@ while true; do
     bash "$script_path"
     
     # Esperar 60 segundos antes de la próxima ejecución
-    sleep 120
+    sleep 60
 done

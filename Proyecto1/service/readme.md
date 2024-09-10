@@ -8,3 +8,17 @@ en cargo.toml copia en las dependencias
 
 Para ejecutar el servicio, desde el directorio src usar:
     cargo run
+
+Si hubiera necesidad de instalar OpenSSL al usar reqwest para tokio
+    en cmd del sistema instalar (Ubuntu):
+        sudo apt-get update
+        sudo apt-get install libssl-dev
+
+    Configurar variables de entorno
+        export OPENSSL_DIR=/usr/local/opt/openssl
+        export PKG_CONFIG_PATH=$OPENSSL_DIR/lib/pkgconfig
+
+    Verificar
+        pkg-config --libs --cflags openssl
+        --nota: si esto no devuelve nada, esta mal instalado
+
