@@ -6,3 +6,5 @@
 # ACTIVIDAD 8
 
 ## Capturas de ejecucion
+
+![cluster](Imagenes/cluster.png) 

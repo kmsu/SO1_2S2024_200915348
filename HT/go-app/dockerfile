@@ -1,6 +1,7 @@
 FROM golang:1.20-alpine
 WORKDIR /app
-COPY . .
+COPY . .  
+RUN go mod init app && go mod tidy  
 RUN go build -o app
 CMD ["/app/app"]
 EXPOSE 8080
