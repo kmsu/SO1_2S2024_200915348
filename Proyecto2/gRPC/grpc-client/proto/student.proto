@@ -1,5 +1,5 @@
 syntax="proto3";
-package student;
+package studentgrpc;
 
 //Servicios
 service Student {
@@ -15,7 +15,7 @@ message StudentRequest {
 }
 
 message StudentResponse {
-    bool succes = 1;
+    bool Success = 1;
 }
 
 enum Discipline {

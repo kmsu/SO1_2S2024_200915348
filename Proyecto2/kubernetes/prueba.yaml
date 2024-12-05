@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: grpc-multi-service-pod
+  namespace: sopes1
+spec:
+  containers:
+  - name: grpc-client-rust
+    image: kmsu0590/rust-client-grpc:0.1
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "0.3"
+    ports:
+    - containerPort: 8080
+  - name: grpc-server-go
+    image: kmsu0590/golang-server-grpc:0.1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "200m"
+        memory: "128Mi"
+    ports:
+    - containerPort: 50051
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-client-service
+  namespace: sopes1
+spec:
+  selector:
+    app: grpc-multi-service-pod
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: disciplinas-service
+  namespace: sopes1
+spec:
+  selector:
+    app: grpc-multi-service-pod
+  ports:
+    - protocol: TCP
+      port: 50051
+      targetPort: 50051
+  type: ClusterIP

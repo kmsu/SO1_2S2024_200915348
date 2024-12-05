@@ -1,4 +1,4 @@
-module golang-server
+module golang-server-boxing
 
 // go 1.23.2
 go 1.21.13

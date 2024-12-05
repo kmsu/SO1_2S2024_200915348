@@ -17,7 +17,7 @@ message StudentRequest {
 }
 
 message StudentResponse {
-    string succes = 1;
+    bool success = 1;
 }
 
 enum Discipline {

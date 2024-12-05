@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: disciplinas-deployment
+  namespace: proyecto2-so1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: disciplinas
+  template:
+    metadata:
+      labels:
+        app: disciplinas
+    spec:
+      containers:
+      - name: grpc-server-golang1
+        image: anthonyalexander/server-golang-natacion:latest
+        ports:
+        - containerPort: 50051
+        env:
+          - name: KAFKA_TOPIC_WINNERS
+            value: "winners"
+          - name: KAFKA_TOPIC_LOSERS
+            value: "losers"
+          - name: KAFKA_BROKER
+            value: "my-cluster-kafka-bootstrap:9092"
+
+      - name: grpc-server-golang2
+        image: anthonyalexander/server-golang-atletismo:latest
+        ports:
+        - containerPort: 50052
+        env:
+          - name: KAFKA_TOPIC_WINNERS
+            value: "winners"
+          - name: KAFKA_TOPIC_LOSERS
+            value: "losers"
+          - name: KAFKA_BROKER
+            value: "my-cluster-kafka-bootstrap:9092"
+
+      - name: grpc-server-golang3
+        image: anthonyalexander/server-golang-boxeo:latest
+        ports:
+        - containerPort: 50053
+        env:
+          - name: KAFKA_TOPIC_WINNERS
+            value: "winners"
+          - name: KAFKA_TOPIC_LOSERS
+            value: "losers"
+          - name: KAFKA_BROKER
+            value: "my-cluster-kafka-bootstrap:9092"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	pb "golang-server/proto"
+	pb "golang-server-boxing/proto"
 	"log"
 	"net"
 
@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	port = flag.Int("port", 50051, "The server port")
+	port = flag.Int("port", 50052, "The server port")
 )
 
 // Server is used to implement the gRPC server in the proto library
@@ -22,7 +22,7 @@ type server struct {
 
 // Implement the GetStudent method
 func (s *server) GetStudent(_ context.Context, in *pb.StudentRequest) (*pb.StudentResponse, error) {
-	log.Printf("Received swimming: %v", in)
+	log.Printf("Received boxing: %v", in)
 	log.Printf("Student name: %s", in.GetName())
 	log.Printf("Student faculty: %s", in.GetFaculty())
 	log.Printf("Student age: %d", in.GetAge())

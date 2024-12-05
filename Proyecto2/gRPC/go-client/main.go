@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	pb "go-client/proto"
 	"log"
 	"time"
@@ -13,8 +14,9 @@ import (
 )
 
 var (
-	//addr = flag.String("addr", "go-server-service:50051", "the address to connect to")
-	addr = flag.String("addr", "localhost:50051", "the address to connect to")
+	addrSwimming = flag.String("addrSwimming", "go-server-service:50051", "the address to connect to swimming")
+	addrBoxing   = flag.String("addrBoxing", "go-server-service:50052", "the address to connect to boxing")
+	addrAtletist = flag.String("addrAtletist", "go-server-service:50053", "the address to connect to atletist")
 )
 
 type Student struct {
@@ -32,20 +34,41 @@ func sendData(fiberCtx *fiber.Ctx) error {
 		})
 	}
 
-	// Set up a connection to the server.
-	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Imprimir los datos JSON que llegaron
+	log.Printf("Datos JSON recibidos: %+v\n", body)
+
+	// Seleccionar la dirección del servidor en función de la disciplina
+	var serverAddr string
+	switch body.Discipline {
+	case 0:
+		serverAddr = *addrSwimming
+	case 1:
+		serverAddr = *addrBoxing
+	case 2:
+		serverAddr = *addrAtletist
+	default:
+		return fiberCtx.Status(400).JSON(fiber.Map{
+			"error": "Invalid discipline value",
+		})
+	}
+
+	// Intentar establecer conexión con el servidor gRPC correspondiente
+	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		customError := fmt.Sprintf("Error connecting to discipline %d (%s): %v", body.Discipline, serverAddr, err)
+		log.Println(customError)
+		return fiberCtx.Status(500).JSON(fiber.Map{
+			"error": customError,
+		})
 	}
 	defer conn.Close()
 	c := pb.NewStudentClient(conn)
 
-	// Create a channel to receive the response and error
+	// Canal para recibir la respuesta y error
 	responseChan := make(chan *pb.StudentResponse)
 	errorChan := make(chan error)
 	go func() {
-
-		// Contact the server and print out its response.
+		// Contactar al servidor y obtener respuesta
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
@@ -67,20 +90,24 @@ func sendData(fiberCtx *fiber.Ctx) error {
 	select {
 	case response := <-responseChan:
 		return fiberCtx.JSON(fiber.Map{
-			"message": response.Succes,
+			"message": response.Success,
 		})
 	case err := <-errorChan:
 		return fiberCtx.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
+			"error":      err.Error(),
+			"discipline": body.Discipline,
 		})
 	case <-time.After(5 * time.Second):
 		return fiberCtx.Status(500).JSON(fiber.Map{
-			"error": "timeout",
+			"error":      "timeout",
+			"discipline": body.Discipline,
 		})
 	}
 }
 
 func main() {
+	flag.Parse()
+
 	app := fiber.New()
 	app.Post("/faculty", sendData)
 
